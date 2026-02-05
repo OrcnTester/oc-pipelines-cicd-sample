@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oc-pipelines-app
+spec:
+  selector:
+    app: oc-pipelines-app
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

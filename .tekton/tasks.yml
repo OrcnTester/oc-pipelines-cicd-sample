@@ -1,0 +1,56 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cleanup
+spec:
+  description: Cleanup workspace content
+  workspaces:
+    - name: source
+  steps:
+    - name: cleanup
+      image: alpine:3.20
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/sh
+        set -eu
+        echo "Cleaning workspace..."
+        rm -rf ./* ./.??* || true
+        echo "Done."
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: flake8
+spec:
+  description: Run flake8 lint
+  workspaces:
+    - name: source
+  steps:
+    - name: flake8
+      image: python:3.12-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+        pip install --no-cache-dir -r requirements.txt flake8
+        flake8 .
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: nose
+spec:
+  description: Run unit tests with nose
+  workspaces:
+    - name: source
+  steps:
+    - name: unit-tests
+      image: python:3.12-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+        pip install --no-cache-dir -r requirements.txt nose
+        nosetests -v

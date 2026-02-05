@@ -1,0 +1,96 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: oc-pipelines-oc-final
+spec:
+  workspaces:
+    - name: shared-workspace
+  params:
+    - name: repo-url
+      type: string
+      description: Git repository url
+    - name: revision
+      type: string
+      default: main
+    - name: image-url
+      type: string
+      description: Full image url (e.g. image-registry.openshift-image-registry.svc:5000/ns/app:latest)
+    - name: app-name
+      type: string
+      default: oc-pipelines-app
+
+  tasks:
+    - name: cleanup
+      taskRef:
+        name: cleanup
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: git-clone
+      runAfter: ["cleanup"]
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+        - name: deleteExisting
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+
+    - name: flake8
+      runAfter: ["git-clone"]
+      taskRef:
+        name: flake8
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: nose
+      runAfter: ["flake8"]
+      taskRef:
+        name: nose
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: buildah
+      runAfter: ["nose"]
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      params:
+        - name: IMAGE
+          value: $(params.image-url)
+        - name: TLSVERIFY
+          value: "false"
+        - name: DOCKERFILE
+          value: Dockerfile
+        - name: CONTEXT
+          value: .
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: deploy
+      runAfter: ["buildah"]
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT
+          value: |
+            set -eu
+            echo "Deploying $(params.app-name) ..."
+            # Replace image placeholder and apply manifests
+            sed "s|IMAGE_PLACEHOLDER|$(params.image-url)|g" k8s/deployment.yaml | oc apply -f -
+            oc apply -f k8s/service.yaml
+            echo "Deployed."
+      workspaces:
+        - name: source
+          workspace: shared-workspace

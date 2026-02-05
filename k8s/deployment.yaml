@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oc-pipelines-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oc-pipelines-app
+  template:
+    metadata:
+      labels:
+        app: oc-pipelines-app
+    spec:
+      containers:
+        - name: app
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
