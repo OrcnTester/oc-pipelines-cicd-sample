@@ -1,4 +1,4 @@
-# OC Pipelines CI/CD Sample (GitHub Actions + Tekton)
+# ci-cd-final-project
 
 A tiny Python service used to demonstrate **CI (GitHub Actions)** and **CD (OpenShift Pipelines / Tekton)**.
 
