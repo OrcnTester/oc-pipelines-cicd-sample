@@ -28,7 +28,7 @@ spec:
     - name: source
   steps:
     - name: flake8
-      image: python:3.11-slim
+      image: python:3.9-slim
       workingDir: $(workspaces.source.path)
       script: |
         #!/usr/bin/env sh
@@ -47,7 +47,7 @@ spec:
     - name: source
   steps:
     - name: unit-tests
-      image: python:3.11-slim
+      image: python:3.9-slim
       workingDir: $(workspaces.source.path)
       script: |
         #!/usr/bin/env sh
